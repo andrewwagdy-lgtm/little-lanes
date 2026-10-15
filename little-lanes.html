@@ -217,11 +217,11 @@ const SVG_GIRL = `<svg viewBox="0 0 60 100" aria-hidden="true">
 /* ---------- words ---------- */
 const UI = {
   en:{char:'Choose your player',lanes:'How many lanes?',speed:'How fast?',mode:'What will you catch?',
-      car:'Car',girl:'Girl',two:'Two lanes',three:'Three lanes',slow:'Slow',normal:'Normal',fast:'Fast',
+      car:'Car',girl:'Girl',time:'How long?',secs:n=>`${n} seconds`,two:'Two lanes',three:'Three lanes',slow:'Slow',normal:'Normal',fast:'Fast',
       go:'Go!',great:'Great job!',again:'Play again',change:'Change game',
       caught:n=>`You caught ${n}!`,retry:'Let’s try again!',retryLine:'You can do it!'},
   fr:{char:'Choisis ton joueur',lanes:'Combien de voies ?',speed:'À quelle vitesse ?',mode:'Qu’est-ce que tu attrapes ?',
-      car:'La voiture',girl:'La fille',two:'Deux voies',three:'Trois voies',slow:'Lent',normal:'Normal',fast:'Rapide',
+      car:'La voiture',girl:'La fille',time:'Combien de temps ?',secs:n=>`${n} secondes`,two:'Deux voies',three:'Trois voies',slow:'Lent',normal:'Normal',fast:'Rapide',
       go:'C’est parti !',great:'Bravo !',again:'Rejouer',change:'Changer le jeu',
       caught:n=>`Tu en as attrapé ${n} !`,retry:'On réessaie !',retryLine:'Tu peux le faire !'}
 };
@@ -294,8 +294,8 @@ if('speechSynthesis' in window){ speechSynthesis.getVoices(); speechSynthesis.on
 
 /* ---------- setup flow ---------- */
 const $ = id => document.getElementById(id);
-const S = {lang:null,char:null,lanes:null,speed:null,mode:null};
-const FLOW = ['lang','char','lanes','speed','mode'];
+const S = {lang:null,char:null,lanes:null,speed:null,time:null,mode:null};
+const FLOW = ['lang','char','lanes','speed','time','mode'];
 let stepIdx = 0;
 
 function show(id){ document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('on', s.id==='s-'+id)); }
@@ -313,6 +313,7 @@ function optionsFor(step){
       {v:'slow',art:'<span class="emo">🐢</span>',label:t.slow},
       {v:'normal',art:'<span class="emo">🐇</span>',label:t.normal},
       {v:'fast',art:'<span class="emo">🐆</span>',label:t.fast}];
+    case 'time': return [30,60,90].map(n=>({v:n,art:`<span class="glyph">${n}</span>`,label:t.secs(n)}));
     case 'mode': return Object.entries(CATS).map(([k,c])=>({v:k,
       art: c.kind==='emo' ? `<span class="emo">${c.icon}</span>` : `<span class="glyph">${c.icon}</span>`,
       label:c.name[S.lang]}));
@@ -390,7 +391,7 @@ function startGame(){
   hint.className = 'chip'+(cat.kind==='emo'?' emo':' txt');
   hint.textContent = cat.icon;
   field.querySelectorAll('.item,.divider').forEach(e=>e.remove());
-  G = {n:S.lanes, lane:S.lanes===3?1:0, items:[], score:0, time:30, spawnT:500, scroll:0,
+  G = {n:S.lanes, lane:S.lanes===3?1:0, items:[], score:0, time:S.time, total:S.time, spawnT:500, scroll:0,
        running:false, ended:false, last:0, sinceTarget:0, cfg:SPEEDS[S.speed], cat};
   for(let k=1;k<G.n;k++){ const d=document.createElement('div'); d.className='divider'; field.insertBefore(d, player); }
   $('snum').textContent = '0';
@@ -482,7 +483,7 @@ function hit(it){
 
 function updateTimer(){
   const left = Math.max(G.time,0);
-  $('tfill').style.transform = `scaleX(${left/30})`;
+  $('tfill').style.transform = `scaleX(${left/G.total})`;
   $('tfill').classList.toggle('low', left<=5);
   $('tnum').textContent = Math.ceil(left);
 }
@@ -494,7 +495,7 @@ function endGame(){
   $('endTitle').textContent = n>0 ? t.great : t.retry;
   $('endNum').textContent = n;
   $('endLine').textContent = n>0 ? t.caught(n) : t.retryLine;
-  $('stars').innerHTML = '<span class="star">★</span>'.repeat(Math.min(n,20));
+  $('stars').innerHTML = '<span class="star">★</span>'.repeat(Math.min(n,30));
   $('again').textContent = t.again;
   $('change').textContent = t.change;
   show('end');
